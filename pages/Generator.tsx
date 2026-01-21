@@ -96,10 +96,8 @@ const ADVANCED_CONFIG_MAP: Record<string, any> = {
     }
 };
 
-// API 地址配置：生产环境使用线上域名，开发环境使用本地地址
-const API_URL = (import.meta as any).env.PROD
-    ? "https://zzzap.site"
-    : "http://localhost:3001";
+// API 地址配置：使用环境变量，生产环境使用 .env.production
+const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3001';
 
 // ==========================================
 // 🎯 组件主体 (Main Component)
