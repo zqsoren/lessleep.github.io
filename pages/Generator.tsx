@@ -96,8 +96,8 @@ const ADVANCED_CONFIG_MAP: Record<string, any> = {
     }
 };
 
-// API Config - 通过后端代理调用Gemini
-const API_URL = 'http://localhost:3001';
+// API Config - 通过后端代理调用Gemini (支持环境变量)
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
 
 // ==========================================
 // 🎯 组件主体 (Main Component)
@@ -187,7 +187,7 @@ const Generator: React.FC<GeneratorProps> = ({ onBack, initialImage }) => {
             if (!user) return;
 
             try {
-                const API_URL = 'http://localhost:3001';
+                // 使用全局 API_URL 变量
                 const token = localStorage.getItem('auth_token');
                 const response = await fetch(`${API_URL}/api/projects`, {
                     headers: {
@@ -359,7 +359,7 @@ Role: Architectural AI Assistant.
         styleId: string;
         prompt: string;
     }) {
-        const API_URL = 'http://localhost:3001';
+        // 使用全局 API_URL 变量
         const token = localStorage.getItem('auth_token');
 
         const response = await fetch(`${API_URL}/api/images/save`, {
@@ -395,7 +395,7 @@ Role: Architectural AI Assistant.
         if (!resultImage || !user) return;
 
         try {
-            const API_URL = 'http://localhost:3001';
+            // 使用全局 API_URL 变量
             const token = localStorage.getItem('auth_token');
 
             if (isNew) {
