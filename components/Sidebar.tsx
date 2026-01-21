@@ -5,7 +5,7 @@ interface SidebarProps {
   currentView: ViewState;
   onChangeView: (view: ViewState) => void;
   isAuthenticated: boolean;
-  user: { username: string; email: string; avatar?: string } | null;
+  user: { username: string; email: string; avatar?: string; role?: string } | null;
   onOpenLogin: () => void;
   onLogout: () => void;
 }
