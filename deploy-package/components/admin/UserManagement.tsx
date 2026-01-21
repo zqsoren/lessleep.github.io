@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
-// API 地址配置：生产环境使用线上域名，开发环境使用本地地址
-const API_URL = (import.meta as any).env.PROD
-    ? "https://zzzap.site"
-    : "http://localhost:3001";
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
 
 interface User {
     id: number;
@@ -217,8 +214,8 @@ const UserManagement: React.FC = () => {
                                             <button
                                                 onClick={() => handleStatusToggle(user.id, user.status)}
                                                 className={`px-3 py-1 rounded-full text-xs font-medium ${user.status === 'active'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-red-100 text-red-700'
                                                     }`}
                                             >
                                                 {user.status === 'active' ? '启用' : '禁用'}

@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// API 地址配置：生产环境使用线上域名，开发环境使用本地地址
-const API_URL = (import.meta as any).env.PROD
-    ? "https://zzzap.site"
-    : "http://localhost:3001";
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
 
 interface PromptTemplate {
     id: number;
@@ -101,8 +98,8 @@ const PromptManagement: React.FC = () => {
                                             setEditedPrompt(prompt.prompt);
                                         }}
                                         className={`w-full text-left p-4 rounded-lg border transition-all ${selectedPrompt?.id === prompt.id
-                                            ? 'border-purple-500 bg-purple-50'
-                                            : 'border-gray-200 hover:border-purple-300 hover:bg-slate-50'
+                                                ? 'border-purple-500 bg-purple-50'
+                                                : 'border-gray-200 hover:border-purple-300 hover:bg-slate-50'
                                             }`}
                                     >
                                         <div className="font-medium text-slate-900">{prompt.style_name}</div>
