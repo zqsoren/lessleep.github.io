@@ -1,0 +1,393 @@
+{
+  "prompt_categories": [
+    {
+      "id": "pre_analysis",
+      "name": "前期分析",
+      "sort_order": 0
+    },
+    {
+      "id": "design_process",
+      "name": "方案分析",
+      "sort_order": 1
+    },
+    {
+      "id": "green",
+      "name": "技术分析",
+      "sort_order": 2
+    },
+    {
+      "id": "render",
+      "name": "效果图",
+      "sort_order": 3
+    },
+    {
+      "id": "tech_dwg",
+      "name": "技术图纸",
+      "sort_order": 4
+    }
+  ],
+  "prompt_subtypes": [
+    {
+      "id": "site_status",
+      "category_id": "pre_analysis",
+      "name": "场地分析",
+      "icon": "fa-map-location-dot",
+      "sort_order": 0
+    },
+    {
+      "id": "site_texture",
+      "category_id": "pre_analysis",
+      "name": "场地底图",
+      "icon": "fa-city",
+      "sort_order": 1
+    },
+    {
+      "id": "planning",
+      "category_id": "pre_analysis",
+      "name": "上位规划分析",
+      "icon": "fa-city",
+      "sort_order": 2
+    },
+    {
+      "id": "crowd",
+      "category_id": "pre_analysis",
+      "name": "人群分析",
+      "icon": "fa-users",
+      "sort_order": 3
+    },
+    {
+      "id": "culture",
+      "category_id": "pre_analysis",
+      "name": "场地现状分析",
+      "icon": "fa-landmark",
+      "sort_order": 4
+    },
+    {
+      "id": "process",
+      "category_id": "design_process",
+      "name": "建筑生成过程",
+      "icon": "fa-cubes",
+      "sort_order": 0
+    },
+    {
+      "id": "exploded",
+      "category_id": "design_process",
+      "name": "爆炸图",
+      "icon": "fa-layer-group",
+      "sort_order": 1
+    },
+    {
+      "id": "section",
+      "category_id": "design_process",
+      "name": "剖透视",
+      "icon": "fa-house-chimney-crack",
+      "sort_order": 2
+    },
+    {
+      "id": "func",
+      "category_id": "design_process",
+      "name": "建筑功能分析",
+      "icon": "fa-sitemap",
+      "sort_order": 3
+    },
+    {
+      "id": "flow",
+      "category_id": "design_process",
+      "name": "建筑流线分析",
+      "icon": "fa-route",
+      "sort_order": 4
+    },
+    {
+      "id": "wind",
+      "category_id": "green",
+      "name": "风环境分析",
+      "icon": "fa-wind",
+      "sort_order": 0
+    },
+    {
+      "id": "heat",
+      "category_id": "green",
+      "name": "热环境分析",
+      "icon": "fa-temperature-high",
+      "sort_order": 1
+    },
+    {
+      "id": "real",
+      "category_id": "render",
+      "name": "写实风",
+      "icon": "fa-camera",
+      "sort_order": 0
+    },
+    {
+      "id": "collage",
+      "category_id": "render",
+      "name": "拼贴风",
+      "icon": "fa-paste",
+      "sort_order": 1
+    },
+    {
+      "id": "contest",
+      "category_id": "render",
+      "name": "竞赛风",
+      "icon": "fa-trophy",
+      "sort_order": 2
+    },
+    {
+      "id": "plan",
+      "category_id": "tech_dwg",
+      "name": "平面图",
+      "icon": "fa-border-all",
+      "sort_order": 0
+    },
+    {
+      "id": "elevation",
+      "category_id": "tech_dwg",
+      "name": "立面图",
+      "icon": "fa-building",
+      "sort_order": 1
+    },
+    {
+      "id": "section_dwg",
+      "category_id": "tech_dwg",
+      "name": "剖面图",
+      "icon": "fa-grip-lines",
+      "sort_order": 2
+    },
+    {
+      "id": "master",
+      "category_id": "tech_dwg",
+      "name": "总平面图",
+      "icon": "fa-map",
+      "sort_order": 3
+    }
+  ],
+  "prompt_styles": [
+    {
+      "id": "sitestatus_style01",
+      "subtype_id": "site_status",
+      "name": "STYLE 01",
+      "preview": "/preview_sitestatus_style01.png",
+      "description": "单色、线稿风、竞赛风、圆形图层",
+      "prompt_content": "{\n  \"task\": \"建筑分析图生成\",\n  \"meta\": {\n    \"label\": \"垂直爆炸分析图\",\n    \"aspect_ratio\": \"9:16\"\n  },\n  \"geometry_constraint\": {\n    \"instruction\": \"严格遵循输入卫星地图的道路与建筑布局 (Strictly follow the road and building layout of the input satellite map)\",\n    \"cropping\": \"对输入地图进行圆形裁切 (Circular crop of the provided map)\"\n  },\n  \"style\": {\n    \"primary_aesthetic\": \"技术性建筑图解 (Technical Architectural Diagram)\",\n    \"sub_style\": \"蓝灰冷色调风格 (Cold Blue & Grey Tone)\",\n    \"rendering_quality\": \"CAD线稿风格，完全扁平化，纸张般极薄 (Paper-thin)\",\n    \"background_color\": \"纯白背景 (Hex #ffffff)\",\n    \"visual_treatment\": \"强调色块与线条的平面构成，无侧面挤压\"\n  },\n  \"composition\": {\n    \"viewpoint\": \"爆炸轴侧图视角 (Exploded Axonometric)\",\n    \"layout\": \"4个圆形切片垂直堆叠\",\n    \"alignment\": \"圆心垂直对齐\",\n    \"details\": \"使用深灰色细虚线连接各层，线条干练精确\"\n  },\n  \"subject\": {\n    \"main_concept\": \"建筑场地多维分析分解图 - 蓝灰定制版\",\n    \"layers\": [\n      {\n        \"position\": \"第1层 (顶部)\",\n        \"theme\": \"水文与城市肌理\",\n        \"elements\": \"河流与水域显示为工程蓝 (Hex #4091c1)\",\n        \"context\": \"水域周边的非水区域显示为白色，建筑部分形成浅灰色 (Hex #e2e1e0) 的建筑肌理，扁平无厚度\"\n      },\n      {\n        \"position\": \"第2层 (上中)\",\n        \"theme\": \"道路交通网络\",\n        \"elements\": \"工程蓝 (Hex #4091c1) 的精密线条网络，线型锐利\",\n        \"context\": \"严谨的CAD线型，区分主次干道，无光晕\"\n      },\n      {\n        \"position\": \"第3层 (中部)\",\n        \"theme\": \"绿地景观\",\n        \"elements\": \"绿地统一填充为清透的浅蓝色 (Hex #ebf6fc)\",\n        \"details\": \"路网和建筑肌理部分用白色(Hex #FFFFFF) 填充\",\n        \"context\": \"浅蓝斑块 + 白色的组合\"\n      },\n      {\n        \"position\": \"第4层 (下中)\",\n        \"theme\": \"建筑图底 (Figure-Ground)\",\n        \"elements\": \"深灰色 (Hex #4c4c4c) 建筑图底，对比度极高\",\n        \"style\": \"经典的黑白图底关系，边缘锐利，无立体高度\"\n      }",
+      "sort_order": 0,
+      "system_prompt_template": "Role: Architectural AI Assistant.\n\nTask: You are updating a configuration JSON for an image generator.\nYour goal is update the \"Base JSON\" based on the \"User Requirements\".\n        \n--- INPUT DATA-- -\n1. Base JSON(Current Settings):{{BASE_JSON}}\n\n2. User Requirements(HIGHEST PRIORITY):\n- User Description: \"{{USER_DESC}}\"\n- Detailed Specs(Colors / Layers):{{ADVANCED_SETTINGS}}\n\n--- INSTRUCTIONS-- -\n1. ** OVERWRITE ** any matching fields in Base JSON with values from \"Detailed Specs\". \n(e.g.If Detailed Specs says \"River Color: #FF0000\", you MUST update the river color field in JSON to #FF0000).\n2. 请保持{{BASE_JSON}}的json格式。\n3. 你只需要输出中文版本的json格式提示词，不要展示思考过程\n4、请你严格按照{{ADVANCED_SETTINGS}}中，“图层选择”中的图层数量和内容，修改{{BASE_JSON}}的图层数量和图层内容。"
+    },
+    {
+      "id": "sitestatus_style02",
+      "subtype_id": "site_status",
+      "name": "STYLE 02",
+      "preview": "https://placehold.co/600x400?text=Candy",
+      "description": "彩色、清新、马卡龙色系、圆形图层",
+      "prompt_content": "{ \"task\":\"建筑分析图生成\", \"meta\": { \"label\":\"垂直爆炸分析图\", \"version\":\"CN_v2.1_Circle_Flat\", \"aspect_ratio\":\"9:16\" }, \"geometry_constraint\": { \"instruction\": \"严格遵循输入卫星地图的道路与建筑布局 (Strictly follow the road and building layout of the input satellite map)\", \"cropping\": \"对输入地图进行圆形裁切 (Circular crop of the provided map)\" }, \"style\": { \"primary_aesthetic\":\"柔和等轴测信息图表 (Soft Isometric Infographic)\", \"sub_style\":\"圆形UI设计风格，磨砂玻璃拟态风格,马卡龙色系 (Circular UI Style & Glassmorphism & Pastel Colors)\", \"rendering_quality\":\"完全扁平化，纸张般极薄 (Paper-thin)，无体积感，无三维厚度,半透明材质，柔和全局光\", \"background_color\":\"纯白背景 (Hex #ffffff)\", \"visual_treatment\":\"切片为二维平面 (2D Planes)，无侧面挤压厚度 (No Extrusion),图层具有半透明通透感\" }, \"composition\": { \"viewpoint\":\"爆炸轴侧图视角 (Exploded Axonometric)\", \"layout\":\"5个圆形切片垂直堆叠 (5 Circular Slices Vertical Stack)\", \"alignment\":\"圆心垂直对齐\", \"details\":\"使用垂直虚线贯穿圆心或边缘，连接各个圆形切片\" }, \"subject\": { \"main_concept\":\"建筑场地多维分析分解图 - 圆形版\", \"layers\": [ { \"position\":\"第1层 (顶部)\", \"theme\":\"水文与流动\", \"elements\":\"透明青蓝色块 (Hex #AEE2F0) 表示水域，强调流动感\", \"context\":\"扁平圆形卡片，格类似参考图中间层的科技感，清透\" }, { \"position\":\"第2层 (上中)\", \"theme\":\"道路交通网络\", \"elements\":\"使用胭脂粉色 (Hex #E85D75) 的线条网络，配合淡粉色光晕 (Hex #FCE4EC)，受圆形边界限制\", \"context\":\"模仿参考图顶层的粉色线性风格，主要道路加粗，节点处有圆形标记\" }, { \"position\":\"第3层 (中部)\", \"theme\":\"绿地景观\", \"elements\":\"嫩黄色底座 (Hex #F7F5D8) 搭配清新的草绿色植被 (Hex #9CCC65)，浅米色 (Hex #F5F5DC) 填充非绿地区域作为基底\", \"details\": \"叠加纯白色 (Hex #FFFFFF) 的路网线条\" \"context\":\"模仿参考图底层的景观风格，树木简化为球形或抽象符号\" \" }, { \"position\":\"第4层 (下中)\", \"theme\":\"建筑图底\", \"elements\":\"淡蓝灰色 (Hex #ECEFF1) 的几何色块表示建筑，基于真实建筑轮廓生成\", \"style\":\"二维平面图底关系，无立体高度\" }, { \"position\":\"第5层 (底部)\", \"theme\":\"环境底图\", \"elements\":\"经过矢量化简化的浅米色 (Hex #F5F5DC) 场地底图 \", \"style\":\"保留原始地形特征，但色彩统一化\" } ] }, \"lighting\": { \"type\":\"平光/无光照渲染 (Flat Lighting / Unlit)\", \"shadows\":\"绝对无投影 (No Drop Shadows)，层与层之间无遮挡阴影\", \"mood\":\"干净，清新、治愈、现代图解风格\" } }",
+      "sort_order": 1,
+      "system_prompt_template": null
+    },
+    {
+      "id": "site_texture_def",
+      "subtype_id": "site_texture",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Masterplan",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "planning_def",
+      "subtype_id": "planning",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Masterplan",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "crowd_def",
+      "subtype_id": "crowd",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Crowd Analysis",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "cult_def",
+      "subtype_id": "culture",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Cultural Analysis",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "proc_def",
+      "subtype_id": "process",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Process",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "exp_def",
+      "subtype_id": "exploded",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Exploded View",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "sect_def",
+      "subtype_id": "section",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Section Perspective",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "func_def",
+      "subtype_id": "func",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Program Analysis",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "flow_def",
+      "subtype_id": "flow",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Circulation",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "wind_def",
+      "subtype_id": "wind",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Wind Analysis",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "heat_def",
+      "subtype_id": "heat",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Heat Analysis",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "real_def",
+      "subtype_id": "real",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Realistic",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "coll_def",
+      "subtype_id": "collage",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Collage",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "cont_def",
+      "subtype_id": "contest",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Contest",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "plan_def",
+      "subtype_id": "plan",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Plan",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "elev_def",
+      "subtype_id": "elevation",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Elevation",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "sect_dwg_def",
+      "subtype_id": "section_dwg",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Section",
+      "sort_order": 0,
+      "system_prompt_template": null
+    },
+    {
+      "id": "master_def",
+      "subtype_id": "master",
+      "name": "默认",
+      "preview": "https://placehold.co/600x400",
+      "description": "Default Style",
+      "prompt_content": "Master Plan",
+      "sort_order": 0,
+      "system_prompt_template": null
+    }
+  ],
+  "advanced_settings": [
+    {
+      "id": 1,
+      "style_id": "Test Style",
+      "config_json": "{\"groups\":[{\"id\":\"group_1769154398628\",\"label\":\"22\",\"type\":\"checkbox\",\"options\":[{\"value\":\"w\",\"label\":\"w\"},{\"value\":\"A\",\"label\":\"A\"}]},{\"id\":\"group_1769154950965\",\"label\":\"ds\",\"type\":\"text\",\"default\":\"qq\"}]}",
+      "is_published": 1,
+      "created_at": "2026-01-23 07:29:24",
+      "updated_at": "2026-01-23T09:16:35.016Z"
+    },
+    {
+      "id": 2,
+      "style_id": "debug_style_1769158230704",
+      "config_json": "{\"groups\":[{\"id\":\"g1\",\"label\":\"Test Group\",\"type\":\"text\",\"default\":\"hello\"}]}",
+      "is_published": 1,
+      "created_at": "2026-01-23 08:50:30",
+      "updated_at": "2026-01-23T08:50:30.783Z"
+    },
+    {
+      "id": 3,
+      "style_id": "sitestatus_style01",
+      "config_json": "{\"groups\":[{\"id\":\"group_1769161656990\",\"label\":\"图片比例\",\"type\":\"text\",\"default\":\"9：16\"},{\"id\":\"group_1769161853049\",\"label\":\"图层选择\",\"type\":\"checkbox\",\"options\":[{\"value\":\"绿地景观\",\"label\":\"绿地景观\",\"default\":true},{\"value\":\"建筑图底\",\"label\":\"建筑图底\",\"default\":true},{\"value\":\"道路交通网络\",\"label\":\"道路交通网络\",\"default\":true},{\"value\":\"水文与城市肌理\",\"label\":\"水文与城市肌理\",\"default\":true}]},{\"id\":\"group_1769180653917\",\"label\":\"水流颜色\",\"type\":\"color\",\"default\":\"#3381ff\"},{\"id\":\"group_1769184876973\",\"label\":\"建筑肌理\",\"type\":\"color\",\"default\":\"#000000\"},{\"id\":\"group_1769184893084\",\"label\":\"道路颜色\",\"type\":\"color\",\"default\":\"#ff9633\"}]}",
+      "is_published": 1,
+      "created_at": "2026-01-23 09:47:39",
+      "updated_at": "2026-01-23T16:16:58.706Z"
+    }
+  ],
+  "prompt_templates": []
+}

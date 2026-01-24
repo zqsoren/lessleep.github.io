@@ -60,6 +60,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    // Heartbeat mechanism for online duration stats
+    useEffect(() => {
+        if (!user) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    await fetch(`${API_URL}/api/user/heartbeat`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Heartbeat failed:', error);
+            }
+        }, 60000); // 60 seconds
+
+        return () => clearInterval(interval);
+    }, [user]);
+
     const login = async (username: string, password: string) => {
         try {
             const response = await fetch(`${API_URL}/api/auth/login`, {

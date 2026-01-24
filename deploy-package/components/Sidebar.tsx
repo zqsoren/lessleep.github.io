@@ -5,7 +5,7 @@ interface SidebarProps {
   currentView: ViewState;
   onChangeView: (view: ViewState) => void;
   isAuthenticated: boolean;
-  user: { username: string; email: string; avatar?: string } | null;
+  user: { username: string; email: string; avatar?: string; role?: string } | null;
   onOpenLogin: () => void;
   onLogout: () => void;
 }
@@ -98,14 +98,20 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isAuthenti
                   <p className="text-xs font-medium text-slate-600">算力余额</p>
                   <h3 className="text-xl font-bold font-mono text-slate-800">2,450 <span className="text-xs font-normal opacity-70">pts</span></h3>
                 </div>
-                <button className="w-full py-2 mt-1 bg-white/60 backdrop-blur-sm text-slate-800 text-xs font-bold rounded-lg hover:bg-white/80 transition-colors shadow-sm border border-white/50">
+                <button
+                  onClick={() => onChangeView('recharge')}
+                  className="w-full py-2 mt-1 bg-white/60 backdrop-blur-sm text-slate-800 text-xs font-bold rounded-lg hover:bg-white/80 transition-colors shadow-sm border border-white/50"
+                >
                   立即充值
                 </button>
               </div>
             </div>
 
             {/* User Profile */}
-            <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer group">
+            <div
+              onClick={() => onChangeView('profile')}
+              className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer group"
+            >
               <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm group-hover:border-google-blue transition-colors relative">
                 <img src={user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`} alt="User" />
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
@@ -115,7 +121,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isAuthenti
                 <p className="text-[10px] text-slate-400 truncate">{user?.email}</p>
               </div>
               <button
-                onClick={onLogout}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLogout();
+                }}
                 className="opacity-0 group-hover:opacity-100 transition-opacity"
                 title="登出"
               >

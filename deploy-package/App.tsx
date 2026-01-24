@@ -7,6 +7,8 @@ import ProjectDetail from './pages/ProjectDetail';
 import Editor from './pages/Editor';
 import Library from './pages/Library';
 import Admin from './pages/Admin';
+import Recharge from './pages/Recharge';
+import Profile from './pages/Profile';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginModal from './components/LoginModal';
 import { ViewState } from './types';
@@ -27,6 +29,7 @@ const AppContent: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [selectedProjectName, setSelectedProjectName] = useState<string>('');
   const [generatorImageUrl, setGeneratorImageUrl] = useState<string | undefined>();
+  const [generatorSource, setGeneratorSource] = useState<'dashboard' | 'project-detail'>('dashboard');
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Helper to navigate to editor with context
@@ -42,9 +45,10 @@ const AppContent: React.FC = () => {
     setCurrentView('project-detail');
   };
 
-  // Helper to open generator with optional image
-  const handleOpenGenerator = (imageUrl?: string) => {
+  // Helper to open generator with optional image and source
+  const handleOpenGenerator = (imageUrl?: string, source: 'dashboard' | 'project-detail' = 'dashboard') => {
     setGeneratorImageUrl(imageUrl);
+    setGeneratorSource(source);
     setCurrentView('generator');
   };
 
@@ -55,12 +59,18 @@ const AppContent: React.FC = () => {
           <Dashboard
             onChangeView={setCurrentView}
             onOpenEditor={handleOpenEditor}
-            onOpenGenerator={handleOpenGenerator}
+            onOpenGenerator={(url) => handleOpenGenerator(url, 'dashboard')}
             onOpenProject={(id) => setCurrentView('projects')}
           />
         );
       case 'generator':
-        return <Generator onBack={() => setCurrentView('dashboard')} initialImage={generatorImageUrl} />;
+        return (
+          <Generator
+            onBack={() => setCurrentView(generatorSource)}
+            initialImage={generatorImageUrl}
+            source={generatorSource}
+          />
+        );
       case 'projects':
         return <Projects onOpenEditor={handleOpenEditor} onOpenProject={handleOpenProject} />;
       case 'project-detail':
@@ -69,7 +79,7 @@ const AppContent: React.FC = () => {
             projectId={selectedProjectId!}
             projectName={selectedProjectName}
             onBack={() => setCurrentView('projects')}
-            onOpenGenerator={handleOpenGenerator}
+            onOpenGenerator={(url) => handleOpenGenerator(url, 'project-detail')}
             onOpenEditor={handleOpenEditor}
           />
         );
@@ -79,6 +89,10 @@ const AppContent: React.FC = () => {
         return <Library />;
       case 'admin':
         return <Admin onBack={() => setCurrentView('dashboard')} />;
+      case 'recharge':
+        return <Recharge onBack={() => setCurrentView('dashboard')} />;
+      case 'profile':
+        return <Profile onBack={() => setCurrentView('dashboard')} />;
       default:
         return (
           <div className="flex-1 flex items-center justify-center bg-slate-50">
@@ -93,8 +107,8 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-surface text-onSurface font-sans">
-      {/* Sidebar - visible on all pages except Generator, Editor and Admin */}
-      {currentView !== 'generator' && currentView !== 'editor' && currentView !== 'admin' && (
+      {/* Sidebar - visible on all pages except Generator, Editor, Admin, Recharge and Profile */}
+      {currentView !== 'generator' && currentView !== 'editor' && currentView !== 'admin' && currentView !== 'recharge' && currentView !== 'profile' && (
         <Sidebar
           currentView={currentView}
           onChangeView={setCurrentView}

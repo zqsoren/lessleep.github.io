@@ -19,8 +19,20 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+// CORS configuration - allow both www and non-www domains
+const corsOptions = {
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://zzzap.site',
+        'https://www.zzzap.site'
+    ],
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Static files - serve uploaded images
 const uploadsPath = join(__dirname, 'uploads');
@@ -55,7 +67,12 @@ function initDatabase() {
             total_generations INTEGER DEFAULT 0,
             monthly_generations INTEGER DEFAULT 0,
             remaining_credits INTEGER DEFAULT 100,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            total_login_duration INTEGER DEFAULT 0,
+            last_heartbeat DATETIME,
+            membership_level TEXT DEFAULT 'free',
+            monthly_remaining_generations INTEGER DEFAULT 100,
+            gift_generations INTEGER DEFAULT 0
         )
     `, (err) => {
         if (err) {
@@ -70,9 +87,57 @@ function initDatabase() {
             addColumnIfNotExists('users', 'total_generations', 'INTEGER DEFAULT 0');
             addColumnIfNotExists('users', 'monthly_generations', 'INTEGER DEFAULT 0');
             addColumnIfNotExists('users', 'remaining_credits', 'INTEGER DEFAULT 100');
-            addColumnIfNotExists('users', 'total_login_duration', 'INTEGER DEFAULT 0');
+            addColumnIfNotExists('users', 'total_login_duration', 'INTEGER DEFAULT 0'); // Accumulated seconds
+            addColumnIfNotExists('users', 'last_heartbeat', 'DATETIME');
             addColumnIfNotExists('users', 'membership_level', 'TEXT DEFAULT "free"');
+            addColumnIfNotExists('users', 'monthly_remaining_generations', 'INTEGER DEFAULT 100');
+            addColumnIfNotExists('users', 'gift_generations', 'INTEGER DEFAULT 0');
         }
+    });
+
+    // Prompt Categories Table (Level 1)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS prompt_categories (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            sort_order INTEGER DEFAULT 0
+        )
+    `, (err) => {
+        if (err) console.error('Error creating prompt_categories table:', err);
+        else console.log('Prompt categories table ready');
+    });
+
+    // Prompt Subtypes Table (Level 2)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS prompt_subtypes (
+            id TEXT PRIMARY KEY,
+            category_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            icon TEXT,
+            sort_order INTEGER DEFAULT 0,
+            FOREIGN KEY (category_id) REFERENCES prompt_categories(id)
+        )
+    `, (err) => {
+        if (err) console.error('Error creating prompt_subtypes table:', err);
+        else console.log('Prompt subtypes table ready');
+    });
+
+    // Prompt Styles Table (Level 3)
+    db.run(`
+        CREATE TABLE IF NOT EXISTS prompt_styles (
+            id TEXT PRIMARY KEY,
+            subtype_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            preview TEXT,
+            description TEXT,
+            prompt_content TEXT,
+            sort_order INTEGER DEFAULT 0,
+            FOREIGN KEY (subtype_id) REFERENCES prompt_subtypes(id)
+        )
+    `, (err) => {
+        if (err) console.error('Error creating prompt_styles table:', err);
+        else console.log('Prompt styles table ready');
+        addColumnIfNotExists('prompt_styles', 'system_prompt_template', 'TEXT');
     });
 
     db.run(`
@@ -151,6 +216,20 @@ function initDatabase() {
             console.error('Error creating generation_records table:', err);
         } else {
             console.log('Generation records table ready');
+
+            // Upgrade table: Add new columns if they don't exist
+            const columns = [
+                'base_json TEXT',
+                'user_desc TEXT',
+                'advanced_settings TEXT',
+                'aspect_ratio TEXT',
+                'full_prompt TEXT'
+            ];
+            columns.forEach(col => {
+                db.run(`ALTER TABLE generation_records ADD COLUMN ${col}`, (err) => {
+                    // Ignore error if column already exists
+                });
+            });
         }
     });
 
@@ -237,28 +316,50 @@ function initDatabase() {
             console.log('Login sessions table ready');
         }
     });
-}
 
-// Helper function to add column if not exists
-function addColumnIfNotExists(table, column, type) {
-    db.all(`PRAGMA table_info(${table})`, (err, columns) => {
+    // Advanced Settings table for Generator
+    db.run(`
+        CREATE TABLE IF NOT EXISTS advanced_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            style_id TEXT NOT NULL UNIQUE,
+            config_json TEXT NOT NULL,
+            is_published INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (style_id) REFERENCES prompt_styles(id)
+        )
+    `, (err) => {
         if (err) {
-            console.error(`Error checking ${table} columns:`, err);
-            return;
-        }
-
-        const columnExists = columns.some(col => col.name === column);
-        if (!columnExists) {
-            db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`, (err) => {
-                if (err) {
-                    console.error(`Error adding ${column} to ${table}:`, err);
-                } else {
-                    console.log(`Added ${column} to ${table}`);
-                }
-            });
+            console.error('Error creating advanced_settings table:', err);
+        } else {
+            console.log('Advanced settings table ready');
         }
     });
 }
+// Helper function to add column if not exists
+function addColumnIfNotExists(tableName, columnName, columnDefinition) {
+    db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+            console.error(`Error adding column ${columnName} to ${tableName}:`, err);
+        }
+    });
+}
+
+// Authentication Middleware
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: '请先登录' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: '登录已过期，请重新登录' });
+        req.user = user;
+        next();
+    });
+};
+
+
 
 // Routes
 
@@ -559,49 +660,21 @@ function requireAdmin(req, res, next) {
     }
 }
 
+// Import routes
+import userRouter from './routes/users.js';
+import adminRouter from './routes/admin.js';
+import promptRouter from './routes/prompts.js';
+
+// Mount routes
+app.use('/api/user', userRouter(db, requireAuth));
+app.use('/api/admin', adminRouter(db, requireAuth));
+app.use('/api/prompts', promptRouter(db, requireAuth));
+
 // ==========================================
-// User API Routes
+// User API Routes (Legacy/Others)
 // ==========================================
 
-// Get user statistics
-app.get('/api/user/stats', requireAuth, (req, res) => {
-    try {
-        const userId = req.user.id;
 
-        db.get(
-            `SELECT 
-                monthly_generations as monthlyGenerations,
-                total_generations as totalGenerations,
-                remaining_credits as remainingQuota,
-                100 as monthlyQuota,
-                0 as monthlyDuration,
-                0 as totalDuration,
-                'free' as membershipLevel,
-                0 as totalRecharge
-            FROM users WHERE id = ?`,
-            [userId],
-            (err, stats) => {
-                if (err) {
-                    return res.status(500).json({ error: '查询失败' });
-                }
-
-                res.json(stats || {
-                    monthlyGenerations: 0,
-                    totalGenerations: 0,
-                    remainingQuota: 100,
-                    monthlyQuota: 100,
-                    monthlyDuration: 0,
-                    totalDuration: 0,
-                    membershipLevel: 'free',
-                    totalRecharge: 0
-                });
-            }
-        );
-    } catch (error) {
-        console.error('Get user stats error:', error);
-        res.status(500).json({ error: '服务器错误' });
-    }
-});
 
 // ==========================================
 // Admin Routes
@@ -1251,7 +1324,9 @@ const unlink = promisify(fs.unlink);
 // Save generated image
 app.post('/api/images/save', requireAuth, async (req, res) => {
     try {
-        const { imageData, categoryId, subtypeId, styleId, prompt, projectId } = req.body;
+        const { imageData, categoryId, subtypeId, styleId, prompt, projectId,
+            baseJson, userDesc, advancedSettings, aspectRatio, fullPrompt // New fields
+        } = req.body;
 
         if (!imageData) {
             return res.status(400).json({ error: '缺少图片数据' });
@@ -1270,16 +1345,36 @@ app.post('/api/images/save', requireAuth, async (req, res) => {
 
         await promisify(fs.writeFile)(filepath, buffer);
 
+        console.log(`[DEBUG] /api/images/save - Received request. User: ${userId}`);
+        console.log(`[DEBUG] Fields: baseJson=${baseJson ? 'YES' : 'NO'}, fullPrompt=${fullPrompt ? 'YES' : 'NO'}, aspect=${aspectRatio}`);
+
         // Save to database
         db.run(
-            'INSERT INTO generation_records (user_id, category_id, subtype_id, style_id, prompt, image_url) VALUES (?, ?, ?, ?, ?, ?)',
-            [userId, categoryId, subtypeId, styleId, prompt, `/uploads/${filename}`],
+            `INSERT INTO generation_records (
+                user_id, category_id, subtype_id, style_id, prompt, image_url,
+                base_json, user_desc, advanced_settings, aspect_ratio, full_prompt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                userId, categoryId, subtypeId, styleId, prompt, `/uploads/${filename}`,
+                baseJson, userDesc, advancedSettings, aspectRatio, fullPrompt
+            ],
             async function (err) {
                 if (err) {
+                    console.error('[ERROR] Insert generation_records failed:', err.message);
                     return res.status(500).json({ error: '保存记录失败' });
                 }
-
                 const generationId = this.lastID;
+                console.log(`[DEBUG] Inserted generation_record ID: ${generationId}`);
+
+                // Update user generation stats
+                db.run(
+                    'UPDATE users SET generated_count = generated_count + 1, month_generated_count = month_generated_count + 1 WHERE id = ?',
+                    [userId],
+                    function (err) {
+                        if (err) console.error('[ERROR] Failed to update user stats:', err);
+                        else console.log(`[DEBUG] Updated user stats for user ${userId}. Changes: ${this.changes}`);
+                    }
+                );
 
                 // If projectId is provided, add to project files
                 if (projectId) {
@@ -1355,8 +1450,12 @@ async function cleanOldImages() {
 // ==========================================
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const TEXT_GEN_URL = "https://cdn.12ai.org/v1beta/models/gemini-1.5-flash:generateContent";
-const IMAGE_GEN_URL = "https://new.12ai.org/v1beta/models/gemini-3-pro-image-preview:generateContent";
+// 🟢 修复：将文本生成回退到稳定的 gemini-1.5-flash 模型，以修复"AI未返回结果"的错误
+// 提示词优化不需要超强模型，Flash 足够快且稳定
+// 尝试使用 user 提供的模型 gemini-2.5-pro-c (通过 new.12ai.org)
+const TEXT_GEN_URL = "https://new.12ai.org/v1beta/models/gemini-2.5-pro-c:generateContent";
+// 用户指定的新版生图模型 (保持不变)
+const IMAGE_GEN_URL = "https://new.12ai.org/v1beta/models/gemini-3-pro-image-preview-4k:generateContent";
 
 // Proxy for text generation
 app.post('/api/gemini/generate-text', requireAuth, async (req, res) => {
@@ -1367,19 +1466,44 @@ app.post('/api/gemini/generate-text', requireAuth, async (req, res) => {
             return res.status(400).json({ error: '缺少instruction参数' });
         }
 
+        console.log('📡 Sending to Gemini Text Model:', TEXT_GEN_URL, instruction.substring(0, 100) + '...');
+
+        // 增加 timeout 设置 (虽然 fetch 原生不支持，但可以通过 AbortController 实现，或者依赖 node 的 fetch 默认超时)
         const response = await fetch(`${TEXT_GEN_URL}?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: instruction }] }]
+                contents: [{
+                    role: "user",
+                    parts: [{ text: instruction }]
+                }],
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                ]
             })
         });
 
-        const data = await response.json();
-        res.json(data);
+        // 🛡️ 先读取文本，避免直接 json() 报错
+        const responseText = await response.text();
+        console.log('✅ Gemini Raw Response:', responseText.substring(0, 1000)); // 打印前1000字符
+
+        try {
+            const data = JSON.parse(responseText);
+            if (data.error) {
+                console.error('❌ Gemini API Error:', data.error);
+            }
+            res.json(data);
+        } catch (jsonError) {
+            console.error('❌ Failed to parse Gemini response as JSON:', responseText);
+            throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+        }
+
     } catch (error) {
         console.error('Gemini text generation error:', error);
-        res.status(500).json({ error: '生成失败' });
+        res.status(500).json({ error: '生成失败: ' + error.message });
     }
 });
 
@@ -1424,6 +1548,336 @@ app.post('/api/gemini/generate-image', requireAuth, async (req, res) => {
         console.error('Gemini image generation error:', error);
         res.status(500).json({ error: '生成失败' });
     }
+});
+
+// ==========================================
+// 🌳 提示词管理系统 API (Prompt Management)
+// ==========================================
+
+// 1. 获取完整分类树 (供 Generator 使用)
+app.get('/api/prompts/tree', (req, res) => {
+    const query = `
+        SELECT 
+            c.id as cat_id, c.name as cat_name, c.sort_order as cat_sort,
+            s.id as sub_id, s.name as sub_name, s.icon as sub_icon, s.sort_order as sub_sort,
+            st.id as style_id, st.name as style_name, st.preview as style_preview, 
+            st.description as style_desc, st.prompt_content as style_prompt, st.sort_order as style_sort
+        FROM prompt_categories c
+        LEFT JOIN prompt_subtypes s ON c.id = s.category_id
+        LEFT JOIN prompt_styles st ON s.id = st.subtype_id
+        ORDER BY c.sort_order, s.sort_order, st.sort_order
+    `;
+
+    db.all(query, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        const tree = [];
+        const catMap = new Map();
+        const subMap = new Map();
+
+        rows.forEach(row => {
+            // Level 1: Category
+            if (!catMap.has(row.cat_id)) {
+                const cat = {
+                    id: row.cat_id,
+                    name: row.cat_name,
+                    subtypes: []
+                };
+                catMap.set(row.cat_id, cat);
+                tree.push(cat);
+            }
+
+            // Level 2: Subtype
+            if (row.sub_id) {
+                const cat = catMap.get(row.cat_id);
+                // Use composite key to avoid collision if subtype ids are not unique globally (though they should be)
+                const subKey = `${row.cat_id}-${row.sub_id}`;
+
+                if (!subMap.has(subKey)) {
+                    const sub = {
+                        id: row.sub_id,
+                        name: row.sub_name,
+                        icon: row.sub_icon,
+                        styles: []
+                    };
+                    subMap.set(subKey, sub);
+                    cat.subtypes.push(sub);
+                }
+
+                // Level 3: Style
+                if (row.style_id) {
+                    const sub = subMap.get(subKey);
+                    sub.styles.push({
+                        id: row.style_id,
+                        name: row.style_name,
+                        preview: row.style_preview, // Should be a URL or base64
+                        description: row.style_desc,
+                        prompt: row.style_prompt
+                    });
+                }
+            }
+        });
+
+        res.json(tree);
+    });
+});
+
+// 2. Admin APIs for Management
+
+// --- Categories (L1) ---
+app.get('/api/admin/categories', authenticateToken, (req, res) => {
+    db.all('SELECT * FROM prompt_categories ORDER BY sort_order', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/admin/categories', authenticateToken, (req, res) => {
+    const { id, name, sort_order } = req.body;
+    db.run('INSERT INTO prompt_categories (id, name, sort_order) VALUES (?, ?, ?)', [id, name, sort_order || 0], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id, name, sort_order });
+    });
+});
+
+app.delete('/api/admin/categories/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    // Cascade delete would be ideal, but for now manual cleanup or assume DB constraints (which we didn't strictly set with ON DELETE CASCADE)
+    // For safety, let's just delete the category. Real app should check for children.
+    db.run('DELETE FROM prompt_categories WHERE id = ?', [id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- Subtypes (L2) ---
+app.get('/api/admin/subtypes', authenticateToken, (req, res) => {
+    const { category_id } = req.query;
+    let query = 'SELECT * FROM prompt_subtypes';
+    let params = [];
+    if (category_id) {
+        query += ' WHERE category_id = ?';
+        params.push(category_id);
+    }
+    query += ' ORDER BY sort_order';
+
+    db.all(query, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/admin/subtypes', authenticateToken, (req, res) => {
+    const { id, category_id, name, icon, sort_order } = req.body;
+    db.run('INSERT INTO prompt_subtypes (id, category_id, name, icon, sort_order) VALUES (?, ?, ?, ?, ?)',
+        [id, category_id, name, icon, sort_order || 0], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id, category_id, name, icon });
+        });
+});
+
+app.delete('/api/admin/subtypes/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM prompt_subtypes WHERE id = ?', [id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// --- Styles (L3) ---
+app.get('/api/admin/styles', authenticateToken, (req, res) => {
+    const { subtype_id } = req.query;
+    let query = 'SELECT * FROM prompt_styles';
+    let params = [];
+    if (subtype_id) {
+        query += ' WHERE subtype_id = ?';
+        params.push(subtype_id);
+    }
+    query += ' ORDER BY sort_order';
+
+    db.all(query, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/admin/styles', authenticateToken, (req, res) => {
+    const { id, subtype_id, name, description, preview, prompt_content, sort_order, system_prompt_template } = req.body;
+    db.run(`INSERT INTO prompt_styles (id, subtype_id, name, description, preview, prompt_content, sort_order, system_prompt_template) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, subtype_id, name, description, preview, prompt_content, sort_order || 0, system_prompt_template], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id, name });
+        });
+});
+
+app.put('/api/admin/styles/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    const { prompt_content, name, description, preview } = req.body;
+
+    // Dynamic update construction
+    let updates = [];
+    let params = [];
+    if (prompt_content !== undefined) { updates.push('prompt_content = ?'); params.push(prompt_content); }
+    if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+    if (description !== undefined) { updates.push('description = ?'); params.push(description); }
+    if (preview !== undefined) { updates.push('preview = ?'); params.push(preview); }
+    if (req.body.system_prompt_template !== undefined) { updates.push('system_prompt_template = ?'); params.push(req.body.system_prompt_template); }
+
+    if (updates.length === 0) return res.json({ success: true }); // Nothing to update
+
+    params.push(id);
+
+    db.run(`UPDATE prompt_styles SET ${updates.join(', ')} WHERE id = ?`, params, function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.delete('/api/admin/styles/:id', authenticateToken, (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM prompt_styles WHERE id = ?', [id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// ==========================================
+// 🎛️ 高级设置管理 API (Advanced Settings)
+// ==========================================
+
+// 1. 获取高级设置配置（管理员用）
+app.get('/api/admin/advanced-settings/:styleId', authenticateToken, (req, res) => {
+    const { styleId } = req.params;
+
+    const query = `SELECT * FROM advanced_settings WHERE style_id = ?`;
+
+    db.get(query, [styleId], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (!row) {
+            // 如果没有配置，返回空配置
+            return res.json({
+                styleId,
+                config: { groups: [] },
+                isPublished: false,
+                updatedAt: null
+            });
+        }
+
+        res.json({
+            styleId: row.style_id,
+            config: JSON.parse(row.config_json),
+            isPublished: row.is_published === 1,
+            updatedAt: row.updated_at
+        });
+    });
+});
+
+// 2. 保存高级设置配置（草稿）
+app.put('/api/admin/advanced-settings/:styleId', authenticateToken, (req, res) => {
+    const { styleId } = req.params;
+    const { config } = req.body;
+
+    if (!config) {
+        return res.status(400).json({ error: 'Config is required' });
+    }
+
+    const configJson = JSON.stringify(config);
+    const now = new Date().toISOString();
+
+    // 先检查是否存在
+    db.get('SELECT id FROM advanced_settings WHERE style_id = ?', [styleId], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (row) {
+            // 更新现有配置
+            db.run(
+                'UPDATE advanced_settings SET config_json = ?, updated_at = ? WHERE style_id = ?',
+                [configJson, now, styleId],
+                function (err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true, message: '配置已保存' });
+                }
+            );
+        } else {
+            // 插入新配置
+            db.run(
+                'INSERT INTO advanced_settings (style_id, config_json, is_published, updated_at) VALUES (?, ?, 0, ?)',
+                [styleId, configJson, now],
+                function (err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true, message: '配置已创建' });
+                }
+            );
+        }
+    });
+});
+
+// 3. 发布高级设置配置
+app.post('/api/admin/advanced-settings/:styleId/publish', authenticateToken, (req, res) => {
+    const { styleId } = req.params;
+
+    db.run(
+        'UPDATE advanced_settings SET is_published = 1, updated_at = ? WHERE style_id = ?',
+        [new Date().toISOString(), styleId],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+
+            if (this.changes === 0) {
+                return res.status(404).json({ error: '配置不存在，请先保存配置' });
+            }
+
+            res.json({ success: true, message: '配置已发布' });
+        }
+    );
+});
+
+// 4. 获取已发布的高级设置（Generator 使用，无需认证）
+app.get('/api/advanced-settings/:styleId', (req, res) => {
+    const { styleId } = req.params;
+
+    const query = `SELECT config_json FROM advanced_settings WHERE style_id = ? AND is_published = 1`;
+
+    db.get(query, [styleId], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (!row) {
+            // 如果没有已发布的配置，返回空配置
+            return res.json({ config: { groups: [] } });
+        }
+
+        res.json({
+            config: JSON.parse(row.config_json)
+        });
+    });
+});
+
+// --- Generations Management ---
+app.get('/api/admin/generations', authenticateToken, (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    db.all(
+        `SELECT g.*, u.username 
+         FROM generation_records g 
+         LEFT JOIN users u ON g.user_id = u.id 
+         ORDER BY g.created_at DESC 
+         LIMIT ? OFFSET ?`,
+        [limit, offset],
+        (err, records) => {
+            if (err) return res.status(500).json({ error: err.message });
+
+            db.get('SELECT COUNT(*) as total FROM generation_records', [], (err, count) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({
+                    records,
+                    totalPages: Math.ceil(count.total / limit),
+                    currentPage: parseInt(page)
+                });
+            });
+        }
+    );
 });
 
 // Start server

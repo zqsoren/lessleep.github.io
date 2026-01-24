@@ -24,6 +24,12 @@ copy /Y server\set-admin.js deploy-package\server\
 mkdir deploy-package\server\uploads
 echo. > deploy-package\server\uploads\.gitkeep
 
+REM 复制数据库迁移和配置同步脚本
+copy /Y server\update_db_schema.cjs deploy-package\server\
+copy /Y server\export_config_data.cjs deploy-package\server\
+copy /Y server\import_config_data.cjs deploy-package\server\
+if exist server\config_export.json copy /Y server\config_export.json deploy-package\server\
+
 echo [3/6] 复制配置文件...
 copy /Y package.json deploy-package\
 copy /Y package-lock.json deploy-package\

@@ -7,7 +7,7 @@ export interface Project {
   images?: { src: string; prompt: string }[];
 }
 
-export type ViewState = 'dashboard' | 'projects' | 'project-detail' | 'generator' | 'editor' | 'library';
+export type ViewState = 'dashboard' | 'projects' | 'project-detail' | 'generator' | 'editor' | 'library' | 'admin' | 'recharge' | 'profile';
 
 // Generator Types
 export interface GenStyle {

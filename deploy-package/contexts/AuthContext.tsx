@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001';
+// API 地址配置：使用环境变量，生产环境使用 .env.production
+const API_URL = (import.meta as any).env.VITE_API_URL || 'http://localhost:3001';
 
 interface User {
     id: number;
@@ -58,6 +59,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsLoading(false);
         }
     };
+
+    // Heartbeat mechanism for online duration stats
+    useEffect(() => {
+        if (!user) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    await fetch(`${API_URL}/api/user/heartbeat`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Heartbeat failed:', error);
+            }
+        }, 60000); // 60 seconds
+
+        return () => clearInterval(interval);
+    }, [user]);
 
     const login = async (username: string, password: string) => {
         try {

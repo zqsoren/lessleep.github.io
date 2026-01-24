@@ -174,7 +174,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView, onOpenEditor, onOpe
                <div className="flex-[9] flex gap-5 min-h-0">
 
                   {/* Card 1: AI Generator - 加深静态彩虹色 */}
-                  <div onClick={onOpenGenerator} className="group flex-1 bg-gradient-to-br from-indigo-100/80 via-purple-100/80 to-pink-100/80 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 rounded-[24px] p-8 text-slate-800 hover:text-white relative overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] flex flex-col justify-between border border-purple-200/50 hover:border-transparent">
+                  <div onClick={() => onOpenGenerator()} className="group flex-1 bg-gradient-to-br from-indigo-100/80 via-purple-100/80 to-pink-100/80 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 rounded-[24px] p-8 text-slate-800 hover:text-white relative overflow-hidden cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] flex flex-col justify-between border border-purple-200/50 hover:border-transparent">
                      <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 opacity-0 group-hover:opacity-100"></div>
 
                      <div>

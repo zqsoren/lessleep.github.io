@@ -89,6 +89,21 @@ pm2 save
 pm2 startup  # 设置开机自启
 ```
 
+### 步骤5.1: 数据库迁移与配置同步 (增量更新必做)
+
+如果你是更新现有服务，**上传完代码后**请执行以下命令来升级数据库结构并同步 Prompt 配置，而不会丢失用户数据：
+
+```bash
+# 1. 升级数据库表结构 (安全操作，仅添加新列/新表)
+node server/update_db_schema.cjs
+
+# 2. 同步最新的 Prompt 和高级设置
+node server/import_config_data.cjs
+
+# 3. 重启服务使生效
+pm2 restart zzzap-backend
+```
+
 ### 步骤6: 配置Nginx
 
 创建配置文件 `/etc/nginx/sites-available/zzzap`:
